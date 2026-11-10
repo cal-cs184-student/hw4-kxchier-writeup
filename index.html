@@ -38,11 +38,6 @@
 
 		Link to GitHub repository: (TODO) <a href="https://cs184.eecs.berkeley.edu/fa26">cs184.eecs.berkeley.edu/fa26</a>
 
-		<figure>
-			<img src="assets/clothsim.png" alt="Cloth draped over sphere" style="width:70%"/>
-			<figcaption>You can add images with captions!</figcaption>
-		</figure>
-
 		<!--
 		We've already added one heading per part, to make your write-up as navigable when grading. Please fit your write-up within these sections!
 		-->
@@ -51,36 +46,109 @@
 		Give a high-level overview of what you implemented in this homework. Think about what you've built as a whole. Share your thoughts on what interesting things you've learned from completing the homework.
 
 		<h2>Part 1: Masses and springs</h2>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-
-		<p>Here is an example 2x2 gridlike structure using an HTML table. Each <b>tr</b> is a row and each <b>td</b> is a column in that row. You might find this useful for framing and showing your result images in an organized fashion.</p>
-		<div style="display: flex; flex-direction: column; align-items: center;">
-			<table style="width: 100%; text-align: center; border-collapse: collapse;">
-			  <tr>
-				<td style="text-align: center;">
-				  <img src="assets/clothsim.png" width="400px"/>
-				  <figcaption>Caption goes here.</figcaption>
-				</td>
-				<td style="text-align: center;">
-				  <img src="assets/clothsim.png" width="400px"/>
-				  <figcaption>Caption goes here.</figcaption>
-				</td>
-			  </tr>
-			  <tr>
-				<td style="text-align: center;">
-				  <img src="assets/clothsim.png" width="400px"/>
-				  <figcaption>Caption goes here.</figcaption>
-				</td>
-				<td style="text-align: center;">
-				  <img src="assets/clothsim.png" width="400px"/>
-				  <figcaption>Caption goes here.</figcaption>
-				</td>
-			  </tr>
-			</table>
-		</div>
+		<p>I constructed an evenly spaced grid of point masses in row-major order and marked the pinned masses using the coordinates provided by the scene. I then connected the masses with structural springs between immediate horizontal and vertical neighbors, shearing springs between diagonal neighbors, and bending springs between masses two positions apart horizontally or vertically.</p>
+		<p>The screenshots below show the wireframe of <code>scene/pinned2.json</code> with three different combinations of constraints.</p>
+		<figure>
+			<img src="assets/without_shearing.png"
+				 alt="Cloth wireframe with structural and bending springs"
+				 style="width:100%"/>
+			<figcaption>
+			  Without shearing constraints: structural and bending springs connect
+			  masses along the grid's rows and columns. The bending springs overlap
+			  the structural springs while the cloth is flat.
+			</figcaption>
+		  </figure>
+		  
+		  <figure>
+			<img src="assets/shearing.png"
+				 alt="Cloth wireframe with only shearing springs"
+				 style="width:100%"/>
+			<figcaption>
+			  Only shearing constraints: springs connect diagonal neighbors,
+			  forming a crossing pattern across the cloth.
+			</figcaption>
+		  </figure>
+		  
+		  <figure>
+			<img src="assets/all_constraints.png"
+				 alt="Cloth wireframe with all three spring types"
+				 style="width:100%"/>
+			<figcaption>
+			  All constraints: structural, shearing, and bending springs combine
+			  to form a grid with diagonal connections.
+			</figcaption>
+		</figure>
 
 		<h2>Part 2: Simulation via numerical integration</h2>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+		<p>I first calculated the external forces on each point mass, then added the spring forces using Hooke's law. I used a smaller spring constant for bending springs, multiplying ks by 0.2. Next, I updated the unpinned masses using damped Verlet integration. Finally, I corrected springs stretched beyond 110% of their rest length. If both endpoints were free, I split the correction between them; if one was pinned, I moved only the other endpoint.</p>
+		<p>I tested the parameters using <code>pinned2.json</code>, resetting the cloth between trials and changing one parameter at a time. The default values were ks = 5000, density = 15, and damping = 0.2%.</p>
+		<h3>Spring constant</h3>
+		<p>With ks = 500, the cloth was loose and wobbled more as it fell. Once it settled, the top edge sagged farther between the pinned corners. With ks = 50000, the cloth stayed more taut and held together as a sheet during the fall, with less deformation. It also had less sag at rest. The default value of 5000 felt somewhere between the two. Increasing ks makes the springs resist stretching and compression more strongly.</p>
+		<div style="display:flex; gap:16px;">
+			<figure style="flex:1; margin:0;">
+			  <img src="assets/ks_500.png"
+				   alt="Cloth with spring constant 500"
+				   style="width:100%"/>
+			  <figcaption>
+				ks = 500: the cloth settled with a deeper sag.
+			  </figcaption>
+			</figure>
+			<figure style="flex:1; margin:0;">
+			  <img src="assets/ks_50000.png"
+				   alt="Cloth with spring constant 50000"
+				   style="width:100%"/>
+			  <figcaption>
+				ks = 50000: the cloth stayed more taut, with less sag.
+			  </figcaption>
+			</figure>
+		</div>
+
+		<h3>Density</h3>
+		<p>Changing density reminded me of changing ks, but in the opposite direction. The lower density of 1.5 gave the cloth a more taut appearance, while the higher density of 150 made it look looser. At rest, the lower-density cloth had a shallower sag and held a more rectangular shape. During the fall, the higher-density cloth also looked looser and wobbled more, while the lower-density cloth held together more tightly. These changes followed the same loose-versus-taut pattern I noticed when testing spring stiffness.</p>
+		<p>Compared with the default density of 15, lowering density reduces the weight supported by the springs, while raising it increases that weight. Since ks stays the same, the heavier cloth stretches the springs further.</p>
+		<div style="display:flex; gap:16px;">
+			<figure style="flex:1; margin:0;">
+			  <img src="assets/density_1_5.png"
+				   alt="Cloth with density 1.5"
+				   style="width:100%"/>
+			  <figcaption>
+				Density = 1.5: a more rectangular resting shape with less sag.
+			  </figcaption>
+			</figure>
+			<figure style="flex:1; margin:0;">
+			  <img src="assets/density_150.png"
+				   alt="Cloth with density 150"
+				   style="width:100%"/>
+			  <figcaption>
+				Density = 150: more deformation and a deeper sag at rest.
+			  </figcaption>
+			</figure>
+		</div>
+		  
+		<h3>Damping</h3>
+		<p>At 0% damping, the cloth continued to bounce and swing after falling. The motion did not seem to die out during the time I observed it. With 1% damping, there was very little bouncing, but the fall itself was much slower, almost as if the cloth were floating. Compared with the default 0.2%, removing damping allowed more continued motion, while increasing it to 1% strongly slowed the movement.</p>
+		<p>Damping reduces the movement carried over from the previous timestep. This explains why it reduces oscillations, but also why a high value can make the whole descent look slow.</p>
+		<div style="display:flex; gap:16px;">
+			<figure style="flex:1; margin:0;">
+			  <img src="assets/damping_0.png"
+				   alt="Cloth swinging with zero percent damping"
+				   style="width:100%"/>
+			  <figcaption>
+				0% damping: the cloth continued swinging and folding during motion.
+			  </figcaption>
+			</figure>
+			<figure style="flex:1; margin:0;">
+			  <img src="assets/damping_1.png"
+				   alt="Cloth with one percent damping"
+				   style="width:100%"/>
+			  <figcaption>
+				1% damping: the cloth descended slowly with little bouncing.
+			  </figcaption>
+			</figure>
+		</div>
+
+		<h3>Four pinned corners</h3>
+		<!-- TODO: After implementing the shaders, add a screenshot of pinned4.json in its final resting state. -->
 
 		<h2>Part 3: Handling collisions with other objects</h2>
 		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.

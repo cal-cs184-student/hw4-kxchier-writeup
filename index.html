@@ -151,7 +151,56 @@
 		<!-- TODO: After implementing the shaders, add a screenshot of pinned4.json in its final resting state. -->
 
 		<h2>Part 3: Handling collisions with other objects</h2>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+		<h3>Collision Implementation</h3>
+		<p>For sphere collisions, I checked whether a point mass was inside the sphere by competing its distance from the center to the radius. If it was inside, I found the point on the sphere's surface in the direction from the center to the mass. I calculated a correction from the mass's previous position to this surface point, then scaled it by (1 - friction) before updating the position.</p>
+		<p>For plane collisions, I claculated the signed distances of the mass's current and previos positions using dot products with the plane's normal. If the mass crossed the plane, I proejcted its current position onto the surface. I then added a small <code>SURFACE_OFFSET</code> toward its original side of the plane so it would not sit drectly on the surface. I applied the correction from its previous position, again scaling by (1 - friction).</p>
+		<p>In the simulation loop, I checked every unpinned point mass against each collision object after the Verlet update and before correcting overstretched springs.</p>
+
+		<h3>CLoth Draped Over a Sphere</h3>
+		<p>I tested <code>sphere.json</code> with ks = 500, 5000, and 50000, resetting the cloth between trials. I kept density at 15 and damping at 0.2%.</p>
+		<p>With ks = 500, the cloth draped closely around the sphere and formed narrower folds along the hanging edges. At the default ks = 5000, the sides spread out a little more. With ks = 50000, the cloth had a wider shape and broader folds, looking less loosely draped around the sphere. The stiffer springs resist deformation more strongly, so the cloth holds its shape as it hangs over the surface.</p>
+		<!-- TODO: Replace the wireframe images with shaded screenshots of the cloth in its final resting state after Part 5. -->
+		<figure>
+			<img src="assets/sphere_ks_500.png"
+				 alt="Cloth draped over a sphere with ks set to 500"
+				 style="width:100%"/>
+			<figcaption>
+			  ks = 500: the cloth hangs closer to the sphere's sides,
+			  with narrower folds.
+			</figcaption>
+		</figure>
+		  
+		<figure>
+			<img src="assets/sphere_ks_5000.png"
+				 alt="Cloth draped over a sphere with ks set to 5000"
+				 style="width:100%"/>
+			<figcaption>
+			  ks = 5000 (default): the hanging sides spread farther outward
+			  than with ks = 500.
+			</figcaption>
+		</figure>
+		  
+		<figure>
+			<img src="assets/sphere_ks_50000.png"
+				 alt="Cloth draped over a sphere with ks set to 50000"
+				 style="width:100%"/>
+			<figcaption>
+			  ks = 50000: the cloth has a wider silhouette and broader folds.
+			</figcaption>
+		</figure>
+
+		<h3>Cloth Resting on a Plane</h3>
+		<p>In <code>plane.json</code>, the cloth fell onto the plane and settled flat on its surface rather than passing through it. I used the default parameters: ks = 5000, density = 15, and damping = 0.2%.</p>
+
+		<!-- TODO: Replace this with a shaded screenshot after Part 5. -->
+		<figure>
+			<img src="assets/plane_rest.png"
+				 alt="Cloth resting flat on a plane"
+				 style="width:100%"/>
+			<figcaption>
+			  Cloth at rest on the plane using the default parameters.
+			</figcaption>
+		</figure>
 
 		<h2>Part 4: Handling self-collisions</h2>
 		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.

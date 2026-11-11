@@ -28,7 +28,7 @@
 	<body>
 		<div class="container">
 		<h1>CS184/284A Fall 2026 Homework 4 Write-Up</h1>
-		<div style="text-align: center;">Names: </div>
+		<div style="text-align: center;">Names: Kate Chier</div>
 
 		<br>
 
@@ -152,11 +152,11 @@
 
 		<h2>Part 3: Handling collisions with other objects</h2>
 		<h3>Collision Implementation</h3>
-		<p>For sphere collisions, I checked whether a point mass was inside the sphere by competing its distance from the center to the radius. If it was inside, I found the point on the sphere's surface in the direction from the center to the mass. I calculated a correction from the mass's previous position to this surface point, then scaled it by (1 - friction) before updating the position.</p>
-		<p>For plane collisions, I claculated the signed distances of the mass's current and previos positions using dot products with the plane's normal. If the mass crossed the plane, I proejcted its current position onto the surface. I then added a small <code>SURFACE_OFFSET</code> toward its original side of the plane so it would not sit drectly on the surface. I applied the correction from its previous position, again scaling by (1 - friction).</p>
+		<p>For sphere collisions, I checked whether a point mass was inside the sphere by comparing its distance from the center to the radius. If it was inside, I found the point on the sphere's surface in the direction from the center to the mass. I calculated a correction from the mass's previous position to this surface point, then scaled it by (1 - friction) before updating the position.</p>
+		<p>For plane collisions, I calculated the signed distances of the mass's current and previous positions using dot products with the plane's normal. If the mass crossed the plane, I projected its current position onto the surface. I then added a small <code>SURFACE_OFFSET</code> toward its original side of the plane so it would not sit directly on the surface. I applied the correction from its previous position, again scaling by (1 - friction).</p>
 		<p>In the simulation loop, I checked every unpinned point mass against each collision object after the Verlet update and before correcting overstretched springs.</p>
 
-		<h3>CLoth Draped Over a Sphere</h3>
+		<h3>Cloth Draped Over a Sphere</h3>
 		<p>I tested <code>sphere.json</code> with ks = 500, 5000, and 50000, resetting the cloth between trials. I kept density at 15 and damping at 0.2%.</p>
 		<p>With ks = 500, the cloth draped closely around the sphere and formed narrower folds along the hanging edges. At the default ks = 5000, the sides spread out a little more. With ks = 50000, the cloth had a wider shape and broader folds, looking less loosely draped around the sphere. The stiffer springs resist deformation more strongly, so the cloth holds its shape as it hangs over the surface.</p>
 		<!-- TODO: Replace the wireframe images with shaded screenshots of the cloth in its final resting state after Part 5. -->
@@ -279,21 +279,108 @@
 		</figure>
 
 		<h2>Part 5: Shaders</h2>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+		<h3>Shader Programs</h3>
+		<p>A shader is a program that runs on the GPU. The vertex shader processes each vertex and calculates its screen position. It also passes along information such as position, normal, and UV coordinates. These values are interpolated across each triangle, and the fragment shader uses them to calculate the color at each fragment.</p>
+		<h3>Blinn-Phong Shading</h3>
+		<p>I combined ambient, diffuse, and specular lighting. Ambient adds a constant base brightness. Diffuse lighting depends on how directly the surface faces the light, which makes the cloth's folds visible. Specular lighting adds highlights based on the alignment between the normal and the halfway vector between the light and viewing directions. I used an ambient coefficient of 0.1, a specular coefficient of 0.5, and a shininess exponent of 8.</p>
+		<p>With only ambient lighting, the cloth looked like a flat silhouette. Diffuse  lighting revealed its curved surface and folds. The specular-only image was mostly dark, with highlights in a few areas. Combining the terms gave the cloth a brighter appearance while keeping the variation across its folds.</p>
+		<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+			<figure style="margin:0;">
+			  <img src="assets/phong_ambient.png"
+				   alt="Ambient lighting only" style="width:100%"/>
+			  <figcaption>Ambient only.</figcaption>
+			</figure>
+			<figure style="margin:0;">
+			  <img src="assets/phong_diffuse.png"
+				   alt="Diffuse lighting only" style="width:100%"/>
+			  <figcaption>Diffuse only.</figcaption>
+			</figure>
+			<figure style="margin:0;">
+			  <img src="assets/phong_specular.png"
+				   alt="Specular lighting only" style="width:100%"/>
+			  <figcaption>Specular only, with a shininess exponent of 8.</figcaption>
+			</figure>
+			<figure style="margin:0;">
+			  <img src="assets/phong_full.png"
+				   alt="Combined Blinn-Phong lighting" style="width:100%"/>
+			  <figcaption>Ambient, diffuse, and specular combined.</figcaption>
+			</figure>
+		</div>
 
-		<h2>(Optional) Part 6: Extra Credit - Additional cloth simulation features!</h2>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+		<h3>Texture Mapping</h3>
+		<p>I sampled the texture using the interpolated UV coordinates and used the sampled color as the fragment color. I chose my watercolor artwork as the custom texture. The flowers and stems wrapped around the top of the sphere and followed the hanging folds of the cloth. This shader displays the image directly, without adding lighting.</p>
+		<figure>
+			<img src="assets/texture_custom.png"
+				 alt="Watercolor artwork mapped onto cloth draped over a sphere"
+				 style="width:100%"/>
+			<figcaption>My watercolor artwork used as the cloth texture.</figcaption>
+		</figure>
+
+		<h3>Bump and Displacement Mapping</h3>
+		<p>For bump mapping, I sampled neighboring heights from the texture to estimate changes in the U and V directions. I used these differences to tilt the normal, then transformed it into world space using the tangent, bitangent, and normal basis. I used the resulting normal in the lighting calculation.</p>
+		<p>Displacement mapping also moves each vertex along its normal using the sampled height. I then used the same fragment shader as bump mapping to shade the displaced surface.</p>
+		<p>I used a black-and-white floral pattern as the height texture for both methods, with Normal = 20 and Height = 0.03. The white background received more outward displacement than the dark flowers. With bump mapping, the flowers look engraved, but the cloth's outline stayed smooth. With displacement, the surface and outline changed. The sharp transitions in the image created jagged areas, especially on the cloth.</p>
+		<div style="display:flex; gap:16px;">
+			<figure style="flex:1; margin:0;">
+			  <img src="assets/bump_cloth.png"
+				   alt="Floral bump mapping on cloth" style="width:100%"/>
+			  <figcaption>Bump mapping: floral detail through lighting.</figcaption>
+			</figure>
+			<figure style="flex:1; margin:0;">
+			  <img src="assets/displacement_cloth.png"
+				   alt="Floral displacement mapping on cloth" style="width:100%"/>
+			  <figcaption>Displacement mapping: the vertices move as well.</figcaption>
+			</figure>
+		</div>
+		<p>
+			Height texture:
+			<a href="https://www.vecteezy.com/vector-art/76727371-black-floral-pattern-on-white-background-with-repeating-flowers-and-leaves">
+			  Black floral pattern on white background with repeating flowers and leaves
+			</a>, from Vecteezy.
+		</p>
 		
-		<h2>Additional Notes (please remove)</h2>
-		<ul>
-			<li>You can also add code if you'd like as so: <code>code code code</code></li>
-			<li>If you'd like to add math equations, 
-				<ul>
-					<li>You can write inline equations like so: \( a^2 + b^2 = c^2 \)</li>
-					<li>You can write display equations like so: \[ a^2 + b^2 = c^2 \]</li>
-				</ul>
-			</li>
-		</ul>
+		<h3>Sphere Resolution Comparison</h3>
+		<p>I compared sphere resolutions of 16 by 16 and 128 by 128, keeping the height texture and scaling parameters the same. The results looked fairly similar from a distance. Bump mapping showed detailed flowers at both resolutions because the normal adjustments happen per fragment, although the lower-resolution sphere still had a more angular outline.</p>
+		<p>The difference was more noticeable with displacement. At the lower resolution, the geometry formed broader, angular changes. The higher resolution followed more of the floral boundaries, but the sharp edges of the height image still produced jagged transitions.</p>
+		<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+			<figure style="margin:0;">
+			  <img src="assets/bump_16.png"
+				   alt="Bump mapping on a 16 by 16 sphere" style="width:100%"/>
+			  <figcaption>Bump, 16 by 16.</figcaption>
+			</figure>
+			<figure style="margin:0;">
+			  <img src="assets/displacement_16.png"
+				   alt="Displacement mapping on a 16 by 16 sphere" style="width:100%"/>
+			  <figcaption>Displacement, 16 by 16.</figcaption>
+			</figure>
+			<figure style="margin:0;">
+			  <img src="assets/bump_128.png"
+				   alt="Bump mapping on a 128 by 128 sphere" style="width:100%"/>
+			  <figcaption>Bump, 128 by 128.</figcaption>
+			</figure>
+			<figure style="margin:0;">
+			  <img src="assets/displacement_128.png"
+				   alt="Displacement mapping on a 128 by 128 sphere" style="width:100%"/>
+			  <figcaption>Displacement, 128 by 128.</figcaption>
+			</figure>
+		</div>
+
+		<h3>Environment-Mapped Reflections</h3>
+		<p>For the mirror shader, I reflected the camera-to-surface direction around the surface normal, then sampled the cubemap in that reflected direction. The sphere showed a curved reflection of the environment, while the cloth's folds stretched and bent the reflected image. Rotating the camera changed which parts of the environment appeared on the surfaces.</p>
+		<div style="display:flex; gap:16px;">
+			<figure style="flex:1; margin:0;">
+			  <img src="assets/mirror_sphere.png"
+				   alt="Environment-mapped reflection on the sphere"
+				   style="width:100%"/>
+			  <figcaption>Mirror shading on the sphere.</figcaption>
+			</figure>
+			<figure style="flex:1; margin:0;">
+			  <img src="assets/mirror_cloth.png"
+				   alt="Environment-mapped reflection on draped cloth"
+				   style="width:100%"/>
+			  <figcaption>Mirror shading on the cloth.</figcaption>
+			</figure>
+		</div>
 		</div>
 	</body>
 </html>

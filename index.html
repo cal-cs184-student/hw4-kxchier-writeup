@@ -203,7 +203,80 @@
 		</figure>
 
 		<h2>Part 4: Handling self-collisions</h2>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+		<h3>Implementation</h3>
+		<p>I used spatial hashing to avoid checking every possible pair of point masses. I divided space into boxes with dimensions 3 * width / num_width_points, 3 * height / num_height_points, and the maximum of those two values. I used floor to find each mass's box coordinates, then combined the coordinates into a hash key. At each timestep, I rebuilt a map from these keys to lists of point mass pointers.</p>
+		<p>For each unpinned mass, I checked the other masses in its bucket, skipping itself. If another mass was closer than twice the cloth's thickness, I calculated a correction pointing away from it. I averaged the corrections and divided by <code>simulation_steps</code> before updating the position. This keeps each correction small when several masses are close together.</p>
+
+		<h3>Falling and Folding</h3>
+		<p>In <code>selfCollision.json</code>, the bottom of the cloth reached the plane first and began folding as the rest fell into it. The cloth then collected into a stack of folds. Later, it spread out into a much flatter shape. The screenshots below show these three stages using ks = 5000, density = 15, and damping = 0.2%.</p>
+		<figure>
+			<img src="assets/self_collision_early.png"
+				 alt="Falling cloth beginning to fold onto itself"
+				 style="width:100%"/>
+			<figcaption>
+			  Early folding: the bottom gathers into folds while the upper
+			  portion is still falling.
+			</figcaption>
+		</figure>
+
+		<figure>
+			<img src="assets/self_collision_middle.png"
+				 alt="Cloth collected into a pile of folds"
+				 style="width:100%"/>
+			<figcaption>
+			  The cloth collects into several layers on the plane.
+			</figcaption>
+		</figure>
+		  
+		<figure>
+			<img src="assets/self_collision_late.png"
+				 alt="Cloth spread into a flatter shape on the plane"
+				 style="width:100%"/>
+			<figcaption>
+			  Later in the simulation, the folds spread out and the cloth
+			  becomes much flatter.
+			</figcaption>
+		</figure>
+
+		<h3>Effects of Density</h3>
+		<p>At density = 150, the cloth gathered into many small wrinkles near the bottom as it folded onto itself. At density = 1.5, the folds were broader and smoother. This reminded me of the stiffness comparison: increasing the mass while keeping the same springs made the cloth look more easily deformed. I kept ks = 5000 and damping = 0.2% for both trials.</p>
+		<figure>
+			<img src="assets/self_density_1_5.png"
+				 alt="Self-colliding cloth with density 1.5"
+				 style="width:100%"/>
+			<figcaption>
+			  Density = 1.5: broader, smoother folds during the fall.
+			</figcaption>
+		</figure>
+		  
+		<figure>
+			<img src="assets/self_density_150.png"
+				 alt="Self-colliding cloth with density 150"
+				 style="width:100%"/>
+			<figcaption>
+			  Density = 150: smaller wrinkles packed together near the bottom.
+			</figcaption>
+		</figure>
+
+		<h3>Effects of Spring Stiffness</h3>
+		<p>With ks = 500, the cloth crumpled into smaller folds where it reached the plane. With ks = 50000, it formed larger, smoother folds and resisted the small wrinkles seen with the weaker springs. Increasing ks also increases the stiffness of the bending springs, so the cloth resists tight bends more strongly. I kept density = 15 and damping = 0.2% for both trials.</p>
+		<figure>
+			<img src="assets/self_ks_500.png"
+				 alt="Self-colliding cloth with spring constant 500"
+				 style="width:100%"/>
+			<figcaption>
+			  ks = 500: small, crumpled folds gather at the bottom.
+			</figcaption>
+		</figure>
+		  
+		<figure>
+			<img src="assets/self_ks_50000.png"
+				 alt="Self-colliding cloth with spring constant 50000"
+				 style="width:100%"/>
+			<figcaption>
+			  ks = 50000: larger, smoother folds.
+			</figcaption>
+		</figure>
 
 		<h2>Part 5: Shaders</h2>
 		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
